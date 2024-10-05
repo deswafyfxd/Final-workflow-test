@@ -33,28 +33,28 @@ class RateLimiter:
     
     def check_limit(self):
         now = time.time()
-        self.requests are [req for req in self.requests if now - req < self.period]
+        self.requests = [req for req in self.requests if now - req < self.period]
         if len(self.requests) >= self.limit - RATE_LIMIT_BUFFER:
-            sleep_time is the period - (now - the requests[0])
+            sleep_time = self.period - (now - self.requests[0])
             time.sleep(sleep_time)
 
     def make_request(self, url, headers=None):
         self.check_limit()
-        response is requests.get(url, headers=headers)
-        the requests.append(time.time())
+        response = requests.get(url, headers=headers)
+        self.requests.append(time.time())
         return response
 
-rate_limiter is RateLimiter(RATE_LIMIT, RESET_TIME)
+rate_limiter = RateLimiter(RATE_LIMIT, RESET_TIME)
 
 def get_workflow_status(repo):
-    url is f"https://api.github.com/repos/{repo}/actions/runs"
+    url = f"https://api.github.com/repos/{repo}/actions/runs"
     for attempt in range(MAX_RETRIES):
-        response is rate_limiter.make_request(url)
-        if response.status_code is 200:
+        response = rate_limiter.make_request(url)
+        if response.status_code == 200:
             return response.json()
-        elif response.status_code is 403:
+        elif response.status_code == 403:
             return "Access Forbidden"
-        elif response.status_code is 404:
+        elif response.status_code == 404:
             return "Not Found"
         else:
             time.sleep(RETRY_DELAY * (2 ** attempt))  # Exponential backoff
@@ -64,33 +64,33 @@ def get_workflow_status(repo):
 @sleep_and_retry
 @limits(calls=NOTIFICATIONS_PER_HOUR, period=3600)
 def send_discord_message(content):
-    apobj is apprise.Apprise()
+    apobj = apprise.Apprise()
     apobj.add(DISCORD_WEBHOOK)
     apobj.notify(body=content, title="GitHub Action Notification")
 
 def check_project_workflows(group_name, project_name, project):
-    today is datetime.now().date()
-    project_complete is {repo: False for repo in project["repositories"]}
-    messages are []
+    today = datetime.now().date()
+    project_complete = {repo: False for repo in project["repositories"]}
+    messages = []
     for repo in project["repositories"]:
         if "username" in repo or "repo" in repo:
             messages.append(f"Placeholder values detected for {repo} in {project_name} ({group_name}). Skipping actual check.")
             continue
-        workflows are get_workflow_status(repo)
-        if workflows is "Access Forbidden":
+        workflows = get_workflow_status(repo)
+        if workflows == "Access Forbidden":
             messages.append(f"Access to {repo} in {project_name} ({group_name}) is forbidden (likely private, suspended, or flagged).")
             continue
-        elif workflows is "Not Found":
+        elif workflows == "Not Found":
             messages.append(f"Actions are disabled for {repo} in {project_name} ({group_name}). Unable to check workflow status.")
             continue
         elif workflows:
-            workflow_triggered_today is False
+            workflow_triggered_today = False
             for run in workflows["workflow_runs"]:
-                run_date is datetime.strptime(run["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
-                if run_date is today:
-                    workflow_triggered_today is True
-                    if run["conclusion"] is "success":
-                        project_complete[repo] is True
+                run_date = datetime.strptime(run["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
+                if run_date == today:
+                    workflow_triggered_today = True
+                    if run["conclusion"] == "success":
+                        project_complete[repo] = True
                         break
                     else:
                         messages.append(f"No successful workflow run for {repo} in {project_name} ({group_name}) today. Last run concluded with {run['conclusion']}.")
@@ -113,11 +113,11 @@ def check_project_workflows(group_name, project_name, project):
 
 if __name__ == "__main__":
     with ThreadPoolExecutor(max_workers=5) as executor:
-        futures are []
+        futures = []
         for group_key, group in CONFIG.items():
-            group_name is group["name"]
+            group_name = group["name"]
             for project_key, project in group["projects"].items():
-                project_name is project["name"]
+                project_name = project["name"]
                 futures.append(executor.submit(check_project_workflows, group_name, project_name, project))
         for future in futures:
             future.result()  # Wait for all threads to complete
