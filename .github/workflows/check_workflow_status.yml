@@ -1,6 +1,7 @@
 name: Check Workflow Status
 
 on:
+  workflow_dispatch:  # This allows manual triggering
   schedule:
     - cron: '0 23 * * *'
 
