@@ -102,6 +102,7 @@ def check_project_workflows(group, project, repos):
             messages.append(f"Failed to fetch workflow for {repo} in {project} ({group}) after {MAX_RETRIES} attempts.")
             continue
 
+    # Ensure to add a message if none of the repositories completed their workflows successfully
     if not all(project_complete.values()):
         if all(not status for status in project_complete.values()):
             messages.append(f"No workflows have completed for both accounts in {project} ({group}) today.")
@@ -110,11 +111,15 @@ def check_project_workflows(group, project, repos):
                 if not status:
                     messages.append(f"No successful workflow run for {repo} in {project} ({group}) today.")
     
+    # Send messages if there are any to send
     if messages:
         send_discord_message("\n".join(messages))
 
 if __name__ == "__main__":
     with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = []
         for group, projects in GROUPS.items():
             for project, repos in projects.items():
-                executor.submit(check_project_workflows, group, project, repos)
+                futures.append(executor.submit(check_project_workflows, group, project, repos))
+        for future in futures:
+            future.result()  # Wait for all threads to complete
