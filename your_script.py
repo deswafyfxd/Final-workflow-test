@@ -72,7 +72,7 @@ def send_discord_message(content):
 
 def check_project_workflows(group, project, repos):
     today = datetime.now().date()
-    project_complete = False
+    project_complete = {repo: False for repo in repos}
     messages = []
     for repo in repos:
         workflows = get_workflow_status(repo)
@@ -80,22 +80,32 @@ def check_project_workflows(group, project, repos):
             messages.append(f"Access to {repo} in {project} ({group}) is forbidden (likely private, suspended, or flagged).")
             continue
         elif workflows == "Not Found":
-            messages.append(f"{repo} in {project} ({group}) not found (possible invalid repository or actions disabled).")
+            messages.append(f"Actions are disabled for {repo} in {project} ({group}). Unable to check workflow status.")
             continue
         elif workflows:
+            workflow_triggered_today = False
             for run in workflows["workflow_runs"]:
                 run_date = datetime.strptime(run["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
-                if run_date == today and run["conclusion"] == "success":
-                    project_complete = True
-                    break
-            if project_complete:
-                break
+                if run_date == today:
+                    workflow_triggered_today = True
+                    if run["conclusion"] == "success":
+                        project_complete[repo] = True
+                        break
+                    else:
+                        messages.append(f"No successful workflow run for {repo} in {project} ({group}) today. Last run concluded with {run['conclusion']}.")
+            if not workflow_triggered_today:
+                messages.append(f"No workflows have been triggered for {repo} in {project} ({group}) today.")
         else:
             messages.append(f"Failed to fetch workflow for {repo} in {project} ({group}) after {MAX_RETRIES} attempts.")
             continue
 
-    if not project_complete:
-        messages.append(f"Workflow for {project} in {group} has not completed today.")
+    if not all(project_complete.values()):
+        if all(not status for status in project_complete.values()):
+            messages.append(f"No workflows have completed for both accounts in {project} ({group}) today.")
+        else:
+            for repo, status in project_complete.items():
+                if not status:
+                    messages.append(f"No successful workflow run for {repo} in {project} ({group}) today.")
     
     if messages:
         send_discord_message("\n".join(messages))
