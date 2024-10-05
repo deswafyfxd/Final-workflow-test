@@ -1,0 +1,41 @@
+Group1:
+  name: "Custom Group 1"
+  projects:
+    Project1:
+      name: "Custom Project 1"
+      repositories:
+        - "username1/repo1"
+        - "username2/repo2"
+
+    Project2:
+      name: "Custom Project 2"
+      repositories:
+        - "username3/repo3"
+        - "username4/repo4"
+
+    Project3:
+      name: "Custom Project 3"
+      repositories:
+        - "username5/repo5"
+        - "username6/repo6"
+
+Group2:
+  name: "Custom Group 2"
+  projects:
+    Project4:
+      name: "Custom Project 4"
+      repositories:
+        - "username7/repo7"
+        - "username8/repo8"
+
+    Project5:
+      name: "Custom Project 5"
+      repositories:
+        - "username9/repo9"
+        - "username10/repo10"
+
+    Project6:
+      name: "Custom Project 6"
+      repositories:
+        - "username11/repo11"
+        - "username12/repo12"
