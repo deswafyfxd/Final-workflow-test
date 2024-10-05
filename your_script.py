@@ -4,6 +4,7 @@ import os
 import time
 from datetime import datetime
 import apprise
+from ratelimit import limits, sleep_and_retry
 
 # Pull the webhook URL from environment variables
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
@@ -30,6 +31,8 @@ RETRY_DELAY = 5  # seconds
 RATE_LIMIT = 5000  # Number of requests allowed per hour
 RESET_TIME = 3600  # Time in seconds after which rate limit resets
 RATE_LIMIT_BUFFER = 50  # Buffer to avoid hitting the limit exactly
+
+NOTIFICATIONS_PER_HOUR = 60  # Apprise notifications limit per hour
 
 class RateLimiter:
     def __init__(self, limit, period):
@@ -66,6 +69,9 @@ def get_workflow_status(repo):
             time.sleep(RETRY_DELAY * (2 ** attempt))  # Exponential backoff
     return None
 
+# Rate limit decorator for Apprise notifications
+@sleep_and_retry
+@limits(calls=NOTIFICATIONS_PER_HOUR, period=3600)
 def send_discord_message(content):
     apobj = apprise.Apprise()
     apobj.add(DISCORD_WEBHOOK)
@@ -103,7 +109,6 @@ def check_project_workflows(group, project, repos):
             messages.append(f"Failed to fetch workflow for {repo} in {project} ({group}) after {MAX_RETRIES} attempts.")
             continue
 
-    # Ensure to add a message if none of the repositories completed their workflows successfully
     if not all(project_complete.values()):
         if all(not status for status in project_complete.values()):
             messages.append(f"No workflows have completed for both accounts in {project} ({group}) today.")
@@ -112,7 +117,6 @@ def check_project_workflows(group, project, repos):
                 if not status:
                     messages.append(f"No successful workflow run for {repo} in {project} ({group}) today.")
     
-    # Send messages if there are any to send
     if messages:
         send_discord_message("\n".join(messages))
 
