@@ -1,9 +1,10 @@
 import requests
+import os
 from datetime import datetime
 
-# Replace with your details
-REPOS = ["hwu282h7dy2h28wh1usyb/bdueyw62t252g7w7sv26w61h19", "username/repo2", "username/repo3", "username/repo4", "username/repo5"]
-DISCORD_WEBHOOK = "your_discord_webhook_url"
+# Pull the webhook URL from environment variables
+DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
+REPOS = ["username/repo1", "username/repo2", "username/repo3", "username/repo4", "username/repo5"]
 
 def get_workflow_status(repo):
     url = f"https://api.github.com/repos/{repo}/actions/runs"
