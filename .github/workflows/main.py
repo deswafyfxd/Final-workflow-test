@@ -23,6 +23,8 @@ jobs:
         pip install requests
 
     - name: Run script
-      run: python your_script.py
+      run: |
+        python your_script.py
+        echo "Workflow status check completed"
       env:
         DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
