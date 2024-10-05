@@ -3,6 +3,7 @@ import requests
 import os
 import time
 from datetime import datetime
+import apprise
 
 # Pull the webhook URL from environment variables
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
@@ -66,9 +67,9 @@ def get_workflow_status(repo):
     return None
 
 def send_discord_message(content):
-    data = {"content": content}
-    response = requests.post(DISCORD_WEBHOOK, json=data)
-    return response.status_code
+    apobj = apprise.Apprise()
+    apobj.add(DISCORD_WEBHOOK)
+    apobj.notify(body=content, title="GitHub Action Notification")
 
 def check_project_workflows(group, project, repos):
     today = datetime.now().date()
