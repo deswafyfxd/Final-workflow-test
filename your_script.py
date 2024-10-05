@@ -75,6 +75,9 @@ def check_project_workflows(group, project, repos):
     project_complete = {repo: False for repo in repos}
     messages = []
     for repo in repos:
+        if "username" in repo or "repo" in repo:
+            messages.append(f"Placeholder values detected for {repo} in {project} ({group}). Skipping actual check.")
+            continue
         workflows = get_workflow_status(repo)
         if workflows == "Access Forbidden":
             messages.append(f"Access to {repo} in {project} ({group}) is forbidden (likely private, suspended, or flagged).")
