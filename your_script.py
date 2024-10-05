@@ -73,15 +73,14 @@ def send_discord_message(content):
 def check_project_workflows(group, project, repos):
     today = datetime.now().date()
     project_complete = False
+    messages = []
     for repo in repos:
         workflows = get_workflow_status(repo)
         if workflows == "Access Forbidden":
-            message = f"Access to {repo} in {project} ({group}) is forbidden (likely private, suspended, or flagged)."
-            send_discord_message(message)
+            messages.append(f"Access to {repo} in {project} ({group}) is forbidden (likely private, suspended, or flagged).")
             continue
         elif workflows == "Not Found":
-            message = f"{repo} in {project} ({group}) not found (possible invalid repository or actions disabled)."
-            send_discord_message(message)
+            messages.append(f"{repo} in {project} ({group}) not found (possible invalid repository or actions disabled).")
             continue
         elif workflows:
             for run in workflows["workflow_runs"]:
@@ -92,13 +91,14 @@ def check_project_workflows(group, project, repos):
             if project_complete:
                 break
         else:
-            message = f"Failed to fetch workflow for {repo} in {project} ({group}) after {MAX_RETRIES} attempts."
-            send_discord_message(message)
+            messages.append(f"Failed to fetch workflow for {repo} in {project} ({group}) after {MAX_RETRIES} attempts.")
             continue
 
     if not project_complete:
-        message = f"Workflow for {project} in {group} has not completed today."
-        send_discord_message(message)
+        messages.append(f"Workflow for {project} in {group} has not completed today.")
+    
+    if messages:
+        send_discord_message("\n".join(messages))
 
 if __name__ == "__main__":
     with ThreadPoolExecutor(max_workers=5) as executor:
