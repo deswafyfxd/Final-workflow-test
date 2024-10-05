@@ -2,7 +2,7 @@ import requests
 from datetime import datetime
 
 # Replace with your details
-REPOS = ["username/repo1", "username/repo2", "username/repo3", "username/repo4", "username/repo5"]
+REPOS = ["hwu282h7dy2h28wh1usyb/bdueyw62t252g7w7sv26w61h19", "username/repo2", "username/repo3", "username/repo4", "username/repo5"]
 DISCORD_WEBHOOK = "your_discord_webhook_url"
 
 def get_workflow_status(repo):
