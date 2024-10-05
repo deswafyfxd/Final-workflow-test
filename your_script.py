@@ -41,14 +41,14 @@ class RateLimiter:
     def check_limit(self):
         now = time.time()
         self.requests = [req for req in self.requests if now - req < self.period]
-        if len(self.requests) >= self limit - RATE_LIMIT_BUFFER:
-            sleep_time = self period - (now - the requests[0])
+        if len(self.requests) >= self.limit - RATE_LIMIT_BUFFER:
+            sleep_time = self.period - (now - self.requests[0])
             time.sleep(sleep_time)
 
     def make_request(self, url, headers=None):
         self.check_limit()
         response = requests.get(url, headers=headers)
-        self requests.append(time.time())
+        self.requests.append(time.time())
         return response
 
 rate_limiter = RateLimiter(RATE_LIMIT, RESET_TIME)
@@ -56,8 +56,8 @@ rate_limiter = RateLimiter(RATE_LIMIT, RESET_TIME)
 def get_workflow_status(repo):
     url = f"https://api.github.com/repos/{repo}/actions/runs"
     for attempt in range(MAX_RETRIES):
-        response is rate_limiter.make_request(url)
-        if response status_code == 200:
+        response = rate_limiter.make_request(url)
+        if response.status_code == 200:
             return response.json()
         elif response.status_code == 403:
             return "Access Forbidden"
@@ -71,7 +71,7 @@ def get_workflow_status(repo):
 @sleep_and_retry
 @limits(calls=NOTIFICATIONS_PER_HOUR, period=3600)
 def send_discord_message(content):
-    apobj is apprise.Apprise()
+    apobj = apprise.Apprise()
     apobj.add(DISCORD_WEBHOOK)
     apobj.notify(body=content, title="GitHub Action Notification")
 
@@ -82,17 +82,17 @@ def append_custom_message(messages, scenario_key):
             messages.append(custom_message)
 
 def check_project_workflows(group_name, project_name, project):
-    today is datetime.now().date()
-    project_complete is {repo: False for repo in project["repositories"]}
-    messages are []
-    actions_disabled_count is 0  # To track actions disabled state
+    today = datetime.now().date()
+    project_complete = {repo: False for repo in project["repositories"]}
+    messages = []
+    actions_disabled_count = 0  # To track actions disabled state
 
     for repo in project["repositories"]:
         if "username" in repo or "repo" in repo:
             messages.append(f"Placeholder values detected for {repo} in {project_name} ({group_name}). Skipping actual check.\n")
             append_custom_message(messages, "placeholder_detected")
             continue
-        workflows are get_workflow_status(repo)
+        workflows = get_workflow_status(repo)
         if workflows == "Access Forbidden":
             messages.append(f"Access to {repo} in {project_name} ({group_name}) is forbidden (likely private, suspended, or flagged).\n")
             append_custom_message(messages, "access_forbidden")
@@ -103,17 +103,23 @@ def check_project_workflows(group_name, project_name, project):
             append_custom_message(messages, "actions_disabled")
             continue
         elif workflows:
-            workflow_triggered_today is False
+            workflow_triggered_today = False
             for run in workflows["workflow_runs"]:
-                run_date is datetime.strptime(run["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
-                if run_date is today:
-                    workflow_triggered_today is True
+                run_date = datetime.strptime(run["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
+                if run_date == today:
+                    workflow_triggered_today = True
                     if run["conclusion"] == "success":
-                        project_complete[repo] is True
+                        project_complete[repo] = True
                         break
-                    else:
-                        messages.append(f"No successful workflow run for {repo} in {project_name} ({group_name}) today. Last run concluded with {run['conclusion']}.\n")
-                        append_custom_message(messages, "no_successful_workflow")
+                    elif run["conclusion"] == "failure":
+                        messages.append(f"Workflow run for {repo} in {project_name} ({group_name}) concluded with failure today.\n")
+                        append_custom_message(messages, "workflow_failed")
+                    elif run["conclusion"] == "timed_out":
+                        messages.append(f"Workflow run for {repo} in {project_name} ({group_name}) concluded with timed out today.\n")
+                        append_custom_message(messages, "workflow_timed_out")
+                    elif run["conclusion"] == "cancelled":
+                        messages.append(f"Workflow run for {repo} in {project_name} ({group_name}) concluded with cancelled today.\n")
+                        append_custom_message(messages, "workflow_cancelled")
             if not workflow_triggered_today:
                 messages.append(f"No workflows have been triggered for {repo} in {project_name} ({group_name}) today.\n")
                 append_custom_message(messages, "no_workflows_triggered")
@@ -143,11 +149,11 @@ def check_project_workflows(group_name, project_name, project):
 
 if __name__ == "__main__":
     with ThreadPoolExecutor(max_workers=5) as executor:
-        futures are []
+        futures = []
         for group_key, group in CONFIG.items():
-            group_name is group["name"]
+            group_name = group["name"]
             for project_key, project in group["projects"].items():
-                project_name is project["name"]
+                project_name = project["name"]
                 futures.append(executor.submit(check_project_workflows, group_name, project_name, project))
         for future in futures:
             future.result()  # Wait for all threads to complete
