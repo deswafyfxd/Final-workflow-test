@@ -1,0 +1,33 @@
+enable_custom_messages: false  # Can be set to true or false
+
+scenarios:
+  access_forbidden:
+    enabled: true
+    message: "Please check the repository settings to resolve access issues."
+  actions_disabled:
+    enabled: true
+    message: "Ensure GitHub Actions are enabled for this repository."
+  no_workflows_triggered:
+    enabled: true
+    message: "Please verify that the workflows are set to trigger as expected."
+  failed_fetch:
+    enabled: true
+    message: "Check if there are any network issues preventing access to the repository."
+  placeholder_detected:
+    enabled: true
+    message: "Update the placeholder values with actual repository details."
+  both_accounts_issues:
+    enabled: true
+    message: "Both repositories in this project are experiencing issues. Immediate attention needed."
+  both_actions_disabled:
+    enabled: true
+    message: "Both accounts have their Actions disabled. Please enable GitHub Actions for these repositories."
+  workflow_failed:
+    enabled: true
+    message: "The workflow has failed. Please investigate the failure and take corrective actions."
+  workflow_timed_out:
+    enabled: true
+    message: "The workflow has timed out. Check the workflow duration and any possible bottlenecks."
+  workflow_cancelled:
+    enabled: true
+    message: "The workflow has been cancelled. Investigate the reason for cancellation and address it accordingly."
